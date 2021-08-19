@@ -24,106 +24,114 @@ if CLIENT then
 end
 
 -- Update
-function TOOL:LeftClick( trace )
+function TOOL:LeftClick()
 
 	if CLIENT then return end
 
-	local ent = trace.Entity;
+	ACF.ClTraceRequest( self:GetOwner(), function( trace )
 
-	if !IsValid( ent ) then 
-		return false;
-	end
+		local ent = trace.Entity;
 
-	local pl = self:GetOwner();
+		if !IsValid( ent ) then 
+			return false;
+		end
 
-	if( ent:GetClass() == "acf_gearbox" and #self.GearboxCopyData > 1 and ent.CanUpdate ) then
+		local pl = self:GetOwner();
 
-		local success, msg = ent:Update( self.GearboxCopyData );
+		if( ent:GetClass() == "acf_gearbox" and #self.GearboxCopyData > 1 and ent.CanUpdate ) then
 
-		ACF_SendNotify( pl, success, msg );
+			local success, msg = ent:Update( self.GearboxCopyData );
 
-	end
+			ACF_SendNotify( pl, success, msg );
 
-	if( ent:GetClass() == "acf_ammo" and #self.AmmoCopyData > 1 and ent.CanUpdate ) then
+		end
 
-		local success, msg = ent:Update( self.AmmoCopyData );
+		if( ent:GetClass() == "acf_ammo" and #self.AmmoCopyData > 1 and ent.CanUpdate ) then
 
-		ACF_SendNotify( pl, success, msg );
+			local success, msg = ent:Update( self.AmmoCopyData );
 
-	end
+			ACF_SendNotify( pl, success, msg );
+
+		end
+
+	end )
 
 	return true;
 
 end
 
 -- Copy
-function TOOL:RightClick( trace )
+function TOOL:RightClick()
 
 	if CLIENT then return end
 
-	local ent = trace.Entity;
+	ACF.ClTraceRequest( self:GetOwner(), function( trace )
 
-	if !IsValid( ent ) then 
-		return false;
-	end
+		local ent = trace.Entity;
 
-	local pl = self:GetOwner();
+		if !IsValid( ent ) then 
+			return false;
+		end
 
-	if( ent:GetClass() == "acf_gearbox" ) then
+		local pl = self:GetOwner();
 
-		local ArgsTable = {};
+		if( ent:GetClass() == "acf_gearbox" ) then
 
-		-- zero out the un-needed tool trace information
-		ArgsTable[1] = pl;
-		ArgsTable[2] = 0;
-		ArgsTable[3] = 0;
-		ArgsTable[4] = ent.Id;
+			local ArgsTable = {};
 
-		-- build gear data
-		ArgsTable[5] = ent.GearTable[1];
-		ArgsTable[6] = ent.GearTable[2];
-		ArgsTable[7] = ent.GearTable[3];
-		ArgsTable[8] = ent.GearTable[4];
-		ArgsTable[9] = ent.GearTable[5];
-		ArgsTable[10] = ent.GearTable[6];
-		ArgsTable[11] = ent.GearTable[7];
-		ArgsTable[12] = ent.GearTable[8];
-		ArgsTable[13] = ent.GearTable[9];
-		ArgsTable[14] = ent.GearTable.Final;
+			-- zero out the un-needed tool trace information
+			ArgsTable[1] = pl;
+			ArgsTable[2] = 0;
+			ArgsTable[3] = 0;
+			ArgsTable[4] = ent.Id;
 
-		self.GearboxCopyData = ArgsTable;
+			-- build gear data
+			ArgsTable[5] = ent.GearTable[1];
+			ArgsTable[6] = ent.GearTable[2];
+			ArgsTable[7] = ent.GearTable[3];
+			ArgsTable[8] = ent.GearTable[4];
+			ArgsTable[9] = ent.GearTable[5];
+			ArgsTable[10] = ent.GearTable[6];
+			ArgsTable[11] = ent.GearTable[7];
+			ArgsTable[12] = ent.GearTable[8];
+			ArgsTable[13] = ent.GearTable[9];
+			ArgsTable[14] = ent.GearTable.Final;
 
-		ACF_SendNotify( pl, true, "Gearbox copied successfully!" );
+			self.GearboxCopyData = ArgsTable;
 
-	end
+			ACF_SendNotify( pl, true, "Gearbox copied successfully!" );
 
-	if( ent:GetClass() == "acf_ammo" ) then
+		end
 
-		local ArgsTable = {};
+		if( ent:GetClass() == "acf_ammo" ) then
 
-		-- zero out the un-needed tool trace information
-		ArgsTable[1] = pl;
-		ArgsTable[2] = 0;
-		ArgsTable[3] = 0;
-		ArgsTable[4] = 0; -- ArgsTable[4] isnt actually used anywhere within acf_ammo ENT:Update() and ENT:CreateAmmo(), just passed around?
+			local ArgsTable = {};
 
-		-- build gear data
-		ArgsTable[5] = ent.RoundId;
-		ArgsTable[6] = ent.RoundType;
-		ArgsTable[7] = ent.RoundPropellant;
-		ArgsTable[8] = ent.RoundProjectile;
-		ArgsTable[9] = ent.RoundData5;
-		ArgsTable[10] = ent.RoundData6;
-		ArgsTable[11] = ent.RoundData7;
-		ArgsTable[12] = ent.RoundData8;
-		ArgsTable[13] = ent.RoundData9;
-		ArgsTable[14] = ent.RoundData10;
+			-- zero out the un-needed tool trace information
+			ArgsTable[1] = pl;
+			ArgsTable[2] = 0;
+			ArgsTable[3] = 0;
+			ArgsTable[4] = 0; -- ArgsTable[4] isnt actually used anywhere within acf_ammo ENT:Update() and ENT:CreateAmmo(), just passed around?
 
-		self.AmmoCopyData = ArgsTable;
+			-- build gear data
+			ArgsTable[5] = ent.RoundId;
+			ArgsTable[6] = ent.RoundType;
+			ArgsTable[7] = ent.RoundPropellant;
+			ArgsTable[8] = ent.RoundProjectile;
+			ArgsTable[9] = ent.RoundData5;
+			ArgsTable[10] = ent.RoundData6;
+			ArgsTable[11] = ent.RoundData7;
+			ArgsTable[12] = ent.RoundData8;
+			ArgsTable[13] = ent.RoundData9;
+			ArgsTable[14] = ent.RoundData10;
 
-		ACF_SendNotify( pl, true, "Ammo copied successfully!" );
+			self.AmmoCopyData = ArgsTable;
 
-	end
+			ACF_SendNotify( pl, true, "Ammo copied successfully!" );
+
+		end
+
+	end )
 
 	return true;
 	

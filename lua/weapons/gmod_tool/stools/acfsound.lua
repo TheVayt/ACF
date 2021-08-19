@@ -113,52 +113,74 @@ end
 
 
 
-function TOOL:LeftClick( trace )
+function TOOL:LeftClick()
+
 	if CLIENT then return true end
-	if not IsReallyValid( trace, self:GetOwner() ) then return false end
+
+	ACF.ClTraceRequest( self:GetOwner(), function( trace )
 	
-	local sound = self:GetOwner():GetInfo("wire_soundemitter_sound")
-	local pitch = self:GetOwner():GetInfo("acfsound_pitch")
-	ReplaceSound( self:GetOwner(), trace.Entity, {sound, pitch} )
+		if not IsReallyValid( trace, self:GetOwner() ) then return false end
+		
+		local sound = self:GetOwner():GetInfo("wire_soundemitter_sound")
+		local pitch = self:GetOwner():GetInfo("acfsound_pitch")
+		ReplaceSound( self:GetOwner(), trace.Entity, {sound, pitch} )
+
+	end )
+
 	return true
+
 end
 
 
 
 
-function TOOL:RightClick( trace )
+function TOOL:RightClick()
+
 	if CLIENT then return true end
-	if not IsReallyValid( trace, self:GetOwner() ) then return false end
-	
-	local class = trace.Entity:GetClass()
-	local support = ACF.SoundToolSupport[class]
-	if not support then return false end
-	
-	local soundData = support.GetSound(trace.Entity)
-	
-	self:GetOwner():ConCommand("wire_soundemitter_sound "..soundData.Sound);
-	
-	if soundData.Pitch then
-		self:GetOwner():ConCommand("acfsound_pitch "..soundData.Pitch);
-	end
-	
+
+	ACF.ClTraceRequest( self:GetOwner(), function( trace )
+
+		if not IsReallyValid( trace, self:GetOwner() ) then return false end
+		
+		local class = trace.Entity:GetClass()
+		local support = ACF.SoundToolSupport[class]
+		if not support then return false end
+		
+		local soundData = support.GetSound(trace.Entity)
+		
+		self:GetOwner():ConCommand("wire_soundemitter_sound "..soundData.Sound);
+		
+		if soundData.Pitch then
+			self:GetOwner():ConCommand("acfsound_pitch "..soundData.Pitch);
+		end
+		
+	end )
+
 	return true
+
 end
 
 
 
 
-function TOOL:Reload( trace )
+function TOOL:Reload()
+
 	if CLIENT then return true end
-	if not IsReallyValid( trace, self:GetOwner() ) then return false end
+
+	ACF.ClTraceRequest( self:GetOwner(), function( trace )
+
+		if not IsReallyValid( trace, self:GetOwner() ) then return false end
+		
+		local class = trace.Entity:GetClass()
+		local support = ACF.SoundToolSupport[class]
+		if not support then return false end
+		
+		support.ResetSound(trace.Entity)
 	
-	local class = trace.Entity:GetClass()
-	local support = ACF.SoundToolSupport[class]
-	if not support then return false end
-	
-	support.ResetSound(trace.Entity)
-	
+	end )
+
 	return true
+
 end
 
 

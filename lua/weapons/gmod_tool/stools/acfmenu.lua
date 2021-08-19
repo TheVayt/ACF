@@ -54,86 +54,100 @@ if CLIENT then
 end
 
 -- Spawn/update functions
-function TOOL:LeftClick( trace )
+function TOOL:LeftClick()
 
 	if CLIENT then return true end
-	if not IsValid( trace.Entity ) and not trace.Entity:IsWorld() then return false end
-	
-	local ply = self:GetOwner()
-	local Type = self:GetClientInfo( "type" )
-	local Id = self:GetClientInfo( "id" )
-	
-	local TypeId = ACF.Weapons[Type][Id]
-	if not TypeId then return false end
-	
-	local DupeClass = duplicator.FindEntityClass( TypeId["ent"] ) 
-	
-	if DupeClass then
-		local ArgTable = {}
-			ArgTable[2] = trace.HitNormal:Angle():Up():Angle()
-			ArgTable[1] = trace.HitPos + trace.HitNormal*32
+
+	ACF.ClTraceRequest( self:GetOwner(), function( trace )
+
+		if not IsValid( trace.Entity ) and not trace.Entity:IsWorld() then return false end
 			
-		local ArgList = list.Get("ACFCvars")
+		local ply = self:GetOwner()
+		local Type = self:GetClientInfo( "type" )
+		local Id = self:GetClientInfo( "id" )
 		
-		-- Reading the list packaged with the ent to see what client CVar it needs
-		for Number, Key in pairs( ArgList[ACF.Weapons[Type][Id]["ent"]] ) do
-			ArgTable[ Number+2 ] = self:GetClientInfo( Key )
-		end
+		local TypeId = ACF.Weapons[Type][Id]
+		if not TypeId then return false end
 		
-		if trace.Entity:GetClass() == ACF.Weapons[Type][Id]["ent"] and trace.Entity.CanUpdate then
-			table.insert( ArgTable, 1, ply )
-			local success, msg = trace.Entity:Update( ArgTable )
-			ACF_SendNotify( ply, success, msg )
+		local DupeClass = duplicator.FindEntityClass( TypeId["ent"] ) 
+		
+		if DupeClass then
+			local ArgTable = {}
+				ArgTable[2] = trace.HitNormal:Angle():Up():Angle()
+				ArgTable[1] = trace.HitPos + trace.HitNormal*32
+				
+			local ArgList = list.Get("ACFCvars")
+			
+			-- Reading the list packaged with the ent to see what client CVar it needs
+			for Number, Key in pairs( ArgList[ACF.Weapons[Type][Id]["ent"]] ) do
+				ArgTable[ Number+2 ] = self:GetClientInfo( Key )
+			end
+			
+			if trace.Entity:GetClass() == ACF.Weapons[Type][Id]["ent"] and trace.Entity.CanUpdate then
+				table.insert( ArgTable, 1, ply )
+				local success, msg = trace.Entity:Update( ArgTable )
+				ACF_SendNotify( ply, success, msg )
+			else
+				-- Using the Duplicator entity register to find the right factory function
+				local Ent = DupeClass.Func( ply, unpack( ArgTable ) )
+				if not IsValid(Ent) then ACF_SendNotify(ply, false, "Couldn't create entity.") return false end
+				Ent:Activate()
+				--Ent:GetPhysicsObject():Wake()
+				Ent:DropToFloor()
+				Ent:GetPhysicsObject():EnableMotion( false )
+				
+				undo.Create( ACF.Weapons[Type][Id]["ent"] )
+					undo.AddEntity( Ent )
+					undo.SetPlayer( ply )
+				undo.Finish()
+			end
+				
+			return true
 		else
-			-- Using the Duplicator entity register to find the right factory function
-			local Ent = DupeClass.Func( ply, unpack( ArgTable ) )
-			if not IsValid(Ent) then ACF_SendNotify(ply, false, "Couldn't create entity.") return false end
-			Ent:Activate()
-			--Ent:GetPhysicsObject():Wake()
-			Ent:DropToFloor()
-			Ent:GetPhysicsObject():EnableMotion( false )
-			
-			undo.Create( ACF.Weapons[Type][Id]["ent"] )
-				undo.AddEntity( Ent )
-				undo.SetPlayer( ply )
-			undo.Finish()
+			print("Didn't find entity duplicator records")
 		end
-			
-		return true
-	else
-		print("Didn't find entity duplicator records")
-	end
+		
+	end )
+
+	return true
 
 end
 
 -- Link/unlink functions
-function TOOL:RightClick( trace )
+function TOOL:RightClick()
 
-	if not IsValid( trace.Entity ) then return false end
 	if CLIENT then return true end
 	
-	local ply = self:GetOwner()
+	ACF.ClTraceRequest( self:GetOwner(), function( trace )
 	
-	if self:GetStage() == 0 and trace.Entity.IsMaster then
-		self.Master = trace.Entity
-		self:SetStage( 1 )
-		return true
-	elseif self:GetStage() == 1 then
-		local success, msg
+		if not IsValid( trace.Entity ) then return false end
+
+		local ply = self:GetOwner()
 		
-		if ply:KeyDown( IN_USE ) or ply:KeyDown( IN_SPEED ) then
-			success, msg = self.Master:Unlink( trace.Entity )
+		if self:GetStage() == 0 and trace.Entity.IsMaster then
+			self.Master = trace.Entity
+			self:SetStage( 1 )
+			return true
+		elseif self:GetStage() == 1 then
+			local success, msg
+			
+			if ply:KeyDown( IN_USE ) or ply:KeyDown( IN_SPEED ) then
+				success, msg = self.Master:Unlink( trace.Entity )
+			else
+				success, msg = self.Master:Link( trace.Entity )
+			end
+			
+			ACF_SendNotify( ply, success, msg )
+			
+			self:SetStage( 0 )
+			self.Master = nil
+			return true
 		else
-			success, msg = self.Master:Link( trace.Entity )
+			return false
 		end
-		
-		ACF_SendNotify( ply, success, msg )
-		
-		self:SetStage( 0 )
-		self.Master = nil
-		return true
-	else
-		return false
-	end
+
+	end )
+
+	return true
 	
 end
