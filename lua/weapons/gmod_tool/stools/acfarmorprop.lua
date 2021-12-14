@@ -119,77 +119,94 @@ duplicator.RegisterEntityModifier( "acfsettings", ApplySettings )
 duplicator.RegisterEntityModifier( "mass", ApplySettings )
 
 -- Apply settings to prop
-function TOOL:LeftClick( trace )
+function TOOL:LeftClick()
 	
-	local ent = trace.Entity
-	
-	if not IsValid( ent ) or ent:IsPlayer() then return false end
 	if CLIENT then return true end
-	if not ACF_Check( ent ) then return false end
-	
-	local ply = self:GetOwner()
-	
-	local ductility = math.Clamp( self:GetClientNumber( "ductility" ), -80, 80 )
-	local thickness = math.Clamp( self:GetClientNumber( "thickness" ), 0.1, 50000 )
-	local mass = CalcArmor( ent.ACF.Aera, ductility / 100, thickness )
-	
-	ApplySettings( ply, ent, { Mass = mass, Ductility = ductility } )
-	
-	-- this invalidates the entity and forces a refresh of networked armor values
-	self.AimEntity = nil
-	
+
+	ACF.ClTraceRequest( self:GetOwner(), function( trace )
+
+		local ent = trace.Entity
+		
+		if not IsValid( ent ) or ent:IsPlayer() then return false end
+		if not ACF_Check( ent ) then return false end
+		
+		local ply = self:GetOwner()
+		
+		local ductility = math.Clamp( self:GetClientNumber( "ductility" ), -80, 80 )
+		local thickness = math.Clamp( self:GetClientNumber( "thickness" ), 0.1, 50000 )
+		local mass = CalcArmor( ent.ACF.Aera, ductility / 100, thickness )
+		
+		ApplySettings( ply, ent, { Mass = mass, Ductility = ductility } )
+		
+		-- this invalidates the entity and forces a refresh of networked armor values
+		self.AimEntity = nil
+		
+	end )
+
 	return true
 	
 end
 
 -- Suck settings from prop
-function TOOL:RightClick( trace )
+function TOOL:RightClick()
 	
-	local ent = trace.Entity
-	
-	if not IsValid( ent ) or ent:IsPlayer() then return false end
 	if CLIENT then return true end
-	if not ACF_Check( ent ) then return false end
-	
-	local ply = self:GetOwner()
-	
-	ply:ConCommand( "acfarmorprop_ductility " .. ent.ACF.Ductility * 100 )
-	ply:ConCommand( "acfarmorprop_thickness " .. ent.ACF.MaxArmour )
-	
-	-- this invalidates the entity and forces a refresh of networked armor values
-	self.AimEntity = nil
-	
+
+	ACF.ClTraceRequest( self:GetOwner(), function( trace )
+
+		local ent = trace.Entity
+		
+		if not IsValid( ent ) or ent:IsPlayer() then return false end
+		if not ACF_Check( ent ) then return false end
+		
+		local ply = self:GetOwner()
+		
+		ply:ConCommand( "acfarmorprop_ductility " .. ent.ACF.Ductility * 100 )
+		ply:ConCommand( "acfarmorprop_thickness " .. ent.ACF.MaxArmour )
+		
+		-- this invalidates the entity and forces a refresh of networked armor values
+		self.AimEntity = nil
+		
+	end )
+
 	return true
 	
 end
 
 -- Total up mass of constrained ents
-function TOOL:Reload( trace )
+function TOOL:Reload()
 	
-	local ent = trace.Entity
-	
-	if not IsValid( ent ) or ent:IsPlayer() then return false end
 	if CLIENT then return true end
-	
-	local data = ACF_CalcMassRatio(ent, true)
-	
-	local total = math.Round( ent.acftotal, 1 )
-	local phystotal = math.Round( ent.acfphystotal, 1 )
-	local parenttotal = math.Round( ent.acftotal - ent.acfphystotal, 1 )
-	local physratio = math.Round(100 * ent.acfphystotal / ent.acftotal, 1)
-	
-	local pwr = "\n"
-	if data.Fuel == 2 then
-		pwr = pwr .. math.Round(data.Power * 1.25 / (ent.acftotal/1000), 1) .. " hp/ton @ " .. math.Round(data.Power * 1.25) .. " hp"
-	else
-		pwr = pwr .. math.Round(data.Power / (ent.acftotal/1000), 1) .. " hp/ton @ " .. math.Round(data.Power) .. " hp"
-		if data.Fuel == 1 then
-			pwr = pwr .. "\n" .. math.Round(data.Power * 1.25 / (ent.acftotal/1000), 1) .. " hp/ton @ " .. math.Round(data.Power * 1.25) .. " hp with fuel"
+
+	ACF.ClTraceRequest( self:GetOwner(), function( trace )
+
+		local ent = trace.Entity
+		
+		if not IsValid( ent ) or ent:IsPlayer() then return false end
+		
+		local data = ACF_CalcMassRatio(ent, true)
+		
+		local total = math.Round( ent.acftotal, 1 )
+		local phystotal = math.Round( ent.acfphystotal, 1 )
+		local parenttotal = math.Round( ent.acftotal - ent.acfphystotal, 1 )
+		local physratio = math.Round(100 * ent.acfphystotal / ent.acftotal, 1)
+		
+		local pwr = "\n"
+		if data.Fuel == 2 then
+			pwr = pwr .. math.Round(data.Power * 1.25 / (ent.acftotal/1000), 1) .. " hp/ton @ " .. math.Round(data.Power * 1.25) .. " hp"
+		else
+			pwr = pwr .. math.Round(data.Power / (ent.acftotal/1000), 1) .. " hp/ton @ " .. math.Round(data.Power) .. " hp"
+			if data.Fuel == 1 then
+				pwr = pwr .. "\n" .. math.Round(data.Power * 1.25 / (ent.acftotal/1000), 1) .. " hp/ton @ " .. math.Round(data.Power * 1.25) .. " hp with fuel"
+			end
 		end
-	end
-	
-	self:GetOwner():ChatPrint( "Total mass is " .. total .. " kg  ("..phystotal.." kg physical, "..parenttotal.." kg parented, "..physratio.."% physical)"..pwr )
-	
+		
+		self:GetOwner():ChatPrint( "Total mass is " .. total .. " kg  ("..phystotal.." kg physical, "..parenttotal.." kg parented, "..physratio.."% physical)"..pwr )
+		
+	end )
+
+	return true
+
 end
 
 function TOOL:Think()
